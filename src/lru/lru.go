@@ -76,6 +76,16 @@ func (this *LRU) Get(k interface{}) (value interface{}, ok bool) {
 	}
 }
 
+func (this *LRU) GetLatest() (k, v interface{}) {
+	this.lazyInit()
+
+	if this.evictList.Len() == 0 {
+		return nil, nil
+	}
+	ent := this.evictList.Front().Value.(*entry)
+	return ent.key, ent.value
+}
+
 func (this *LRU) remove(le *list.Element) (k, v interface{}) {
 	k_v := le.Value.(*entry)
 	this.evictList.Remove(le)
@@ -87,7 +97,6 @@ func (this *LRU) Remove(k, v interface{}) {
 	this.lazyInit()
 
 	ent, ok := this.cache[k]
-
 	if !ok {
 		return
 	}
@@ -100,6 +109,6 @@ func (this *LRU) removeOldest() (k, v interface{}) {
 	if le == nil {
 		return
 	}
-
 	return this.remove(le)
 }
+
