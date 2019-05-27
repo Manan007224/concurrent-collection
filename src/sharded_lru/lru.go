@@ -68,7 +68,7 @@ func (this *LRU) Len() int {
 	return len
 }
 
-func (l *LRU) shard(key interface{}) *shard {
+func (this *LRU) shard(key interface{}) *shard {
 	h := fnv.New32a() // used to hash a byte array
 
 	// try to get a bytes representation of the key any way we can, in order
@@ -104,7 +104,7 @@ func (l *LRU) shard(key interface{}) *shard {
 		h.Write(buf.Bytes())
 	}
 
-	return l.shards[h.Sum32()&uint32(l.nshards-1)]
+	return this.shards[h.Sum32()&uint32(this.nshards-1)]
 }
 
 func toBytes(v interface{}) []byte {
