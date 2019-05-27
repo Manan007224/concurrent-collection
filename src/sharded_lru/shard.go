@@ -24,7 +24,9 @@ func newShard(cap int) *shard {
 }
 
 // Len returns the number of items currently in the LRU
-func (s *shard) Len() int { return int(atomic.LoadInt32(&s.len)) }
+func (s *shard) Len() int {
+	return int(atomic.LoadInt32(&s.len)) 
+}
 
 // add will insert a new keyval pair to the shard
 func (s *shard) add(k, v interface{}) {
@@ -38,7 +40,7 @@ func (s *shard) add(k, v interface{}) {
 		s.evictList.MoveToFront(le)
 		return
 	}
-	s.cache[k] = s.l.PushFront(&entry{key: k, val: v})
+	s.cache[k] = s.evictList.PushFront(&entry{key: k, val: v})
 	atomic.AddInt32(&s.len, 1)
 
 	if s.cap > 0 && s.Len() > s.cap {
@@ -68,7 +70,7 @@ func (s *shard) get(key interface{}) (value interface{}, ok bool) {
 	defer s.Unlock()
 
 	if le, found := s.cache[key]; found {
-		s.l.MoveToFront(le)
+		s.evictList.MoveToFront(le)
 		return le.Value.(*entry).val, true
 	}
 	return nil, false
