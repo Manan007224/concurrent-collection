@@ -155,3 +155,103 @@ func BenchmarkGet(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkGetParallel(b *testing.B) {
+	b.Run("mostly_found", func(b *testing.B) {
+		r := makeRand(b.N)
+		l := populated(r)
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			i := 0
+			for pb.Next() {
+				res, _ = l.Get(r[i]) // will find everything since we've added those numbers above
+				i++
+			}
+		})
+	})
+	b.Run("mostly_not_found", func(b *testing.B) {
+		r := makeRand(b.N)
+		l := populated(r)
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			i := 0
+			for pb.Next() {
+				res, _ = l.Get(i) // will rarely find a value
+				i++
+			}
+		})
+	})
+}
+
+func BenchmarkRemove(b *testing.B) {
+	b.Run("mostly_found", func(b *testing.B) {
+		r := makeRand(b.N)
+		l := populated(r)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			l.Remove(r[i]) // will find everything since we've added those numbers above
+		}
+	})
+
+	b.Run("mostly_not_found", func(b *testing.B) {
+		r := makeRand(b.N)
+		l := populated(r)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			l.Remove(i) // will rarely find a value
+		}
+	})
+}
+
+func BenchmarkRemoveParallel(b *testing.B) {
+	b.Run("mostly_found", func(b *testing.B) {
+		r := makeRand(b.N)
+		l := populated(r)
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			i := 0
+			for pb.Next() {
+				l.Remove(r[i]) // will find everything since we've added those numbers above
+				i++
+			}
+		})
+	})
+	b.Run("mostly_not_found", func(b *testing.B) {
+		r := makeRand(b.N)
+		l := populated(r)
+		b.ResetTimer()
+		b.RunParallel(func(pb *testing.PB) {
+			i := 0
+			for pb.Next() {
+				l.Remove(i) // will rarely find a value
+				i++
+			}
+		})
+	})
+}
+
+func TestTraverse(t *testing.T) {
+	var l LRU
+	for i := 0; i < 1000; i++ {
+		l.Add(i, i)
+	}
+
+	c := 0
+	l.Traverse(func(key, val interface{}) bool {
+		c++
+		return true
+	})
+	if c != l.Len() {
+		t.Errorf("c is %d, want %d", c, l.Len())
+	}
+
+	c = 0
+	l.Traverse(func(key, val interface{}) bool {
+		c++
+		// stop traverse when c is 10
+		return c != 10
+	})
+	if c != 10 {
+		t.Errorf("c is %d, want 10", c)
+	}
+}

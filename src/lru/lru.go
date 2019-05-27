@@ -4,12 +4,14 @@ package lru
 
 import (
 	"container/list"
+	"sync"
 )
 
 type LRU struct {
 	cap 				int 													// The max no of items LRU can hold
-	cache 			map[interface{}]*list.Element 	// The cache for our items 
+	cache 			map[interface{}]*list.Element // The cache for our items 
 	evictList  *list.List 										// The acutal list holding our data
+	sync.Mutex																// Protects the cache and evictList
 }
 
 
@@ -44,6 +46,8 @@ func (this *LRU) Len() int {
 } 
 
 func (this *LRU) Add(k, v interface{}) {
+	this.Lock()
+	defer this.Unlock()
 	this.lazyInit()
 
 	// If the item already exists
@@ -65,6 +69,8 @@ func (this *LRU) Add(k, v interface{}) {
 
 
 func (this *LRU) Get(k interface{}) (value interface{}, ok bool) {
+	this.Lock()
+	defer this.Unlock()
 	this.lazyInit()
 
 	// Move the item at the head of the evictList
@@ -77,6 +83,8 @@ func (this *LRU) Get(k interface{}) (value interface{}, ok bool) {
 }
 
 func (this *LRU) GetLatest() (k, v interface{}) {
+	this.Lock()
+	defer this.Unlock()
 	this.lazyInit()
 
 	if this.evictList.Len() == 0 {
@@ -93,7 +101,9 @@ func (this *LRU) remove(le *list.Element) (k, v interface{}) {
 	return k_v.key, k_v.value	
 }
 
-func (this *LRU) Remove(k, v interface{}) {
+func (this *LRU) Remove(k interface{}) {
+	this.Lock()
+	defer this.Unlock()
 	this.lazyInit()
 
 	ent, ok := this.cache[k]
@@ -112,3 +122,44 @@ func (this *LRU) removeOldest() (k, v interface{}) {
 	return this.remove(le)
 }
 
+// TraverseFunc is the function called for each element when
+// traversing an LRU
+type TraverseFunc func(key, val interface{}) bool
+
+// Traverse will call fn for each element in the LRU, from most recently used to
+// least. If fn returns false, the traverse stops
+func (this *LRU) Traverse(fn TraverseFunc) {
+	this.Lock()
+	defer this.Unlock()
+	le := this.evictList.Front()
+	for {
+		if le == nil {
+			break
+		}
+
+		e := le.Value.(*entry)
+		if !fn(e.key, e.value) {
+			break
+		}
+		le = le.Next()
+	}
+}
+
+// TraverseReverse will call fn for each element in the LRU, from least recently used to
+// most. If fn returns false, the traverse stops
+func (this *LRU) TraverseReverse(fn TraverseFunc) {
+	this.Lock()
+	defer this.Unlock()
+	le := this.evictList.Back()
+	for {
+		if le == nil {
+			break
+		}
+
+		e := le.Value.(*entry)
+		if !fn(e.key, e.value) {
+			break
+		}
+		le = le.Prev()
+	}
+}
