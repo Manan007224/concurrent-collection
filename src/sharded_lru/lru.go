@@ -1,13 +1,16 @@
 package lru
 
 import (
-	"container/list"
-	"sync"
-	"sync/atomic"
+	"bytes"
+	"encoding/binary"
+	"encoding/gob"
+	"fmt"
+	"hash/fnv"
+	"strconv"
 )
 
 type LRU struct {
-	cap 			int
+	cap 		int
 	nshards 	int
 	shards		[]*shard
 }
@@ -19,33 +22,33 @@ type entry struct {
 
 // unexported function which checks whether a LRU is initialized based on overall capacity
 // or number of shards
-func (this *LRU) processOptions(opt string, cap int) bool {
-	if opt == "WithCapacity" {
-		this.cap = cap
-		return true
-	} else if opt == "WithShards" {
-		this.nshards = n
-		return true
-	} else {
-		return false
-	}
-} 
+// func (this *LRU) processOptions(opt string, cap int) bool {
+// 	if opt == "WithCapacity" {
+// 		this.cap = cap
+// 		return true
+// 	} else if opt == "WithShards" {
+// 		this.nshards = n
+// 		return true
+// 	} else {
+// 		return false
+// 	}
+// } 
 
 // New creates a new LRU with the provided capacity. If cap less than 1, then the LRU
 // grows indefinitely
-func New(opt string, cap int) *LRU {
+func New(opts ...Option) *LRU {
 	l := &LRU{}
-	ok := this.processOptions(opt, cap)
-	if !ok {
-		return
+	for _, o := range opts {
+		o.apply(l)
 	}
 	if l.nshards < 1 {
 		l.nshards = 1
 	}
-	shard_cap := l.cap / l.nshards
-	l.nshards = make([]*shard, l.nshards)
-	for i := 0; i < nshards; ++i {
-		l.shards[i] = newShard(shard_cap)
+
+	cap := l.cap / l.nshards
+	l.shards = make([]*shard, l.nshards)
+	for i := 0; i < l.nshards; i++ {
+		l.shards[i] = newShard(cap)
 	}
 	return l
 }
@@ -68,8 +71,77 @@ func (this *LRU) Len() int {
 	return len
 }
 
-// useful Interfaces for our hash function
+// Add will insert a new keyval pair to the LRU
+func (this *LRU) Add(k, v interface{}) {
+	this.lazyInit()
+	this.shard(k).add(k, v)
+}
 
+// PeekFront will return the element at the front of the queue without modifying
+// it in anyway
+func (this *LRU) PeekFront() (key, val interface{}) {
+	this.lazyInit()
+	return this.shard(1).front()
+}
+
+// Get will try to retrieve a value from the given key. The second return is
+// true if the key was found.
+func (this *LRU) Get(key interface{}) (value interface{}, ok bool) {
+	return this.shard(key).get(key)
+}
+
+// Remove will remove the given key from the LRU
+func (this *LRU) Remove(key interface{}) {
+	this.shard(key).removeKey(key)
+}
+
+// TraverseFunc is the function called for each element when
+// traversing an LRU
+type TraverseFunc func(key, val interface{}) bool
+
+// Traverse will call fn for each element in the LRU, from most recently used to
+// least. If fn returns false, the traverse stops
+func (this *LRU) Traverse(fn TraverseFunc) {
+L:
+	for _, s := range this.shards {
+		le := s.evictList.Front()
+		for {
+			if le == nil {
+				break L
+			}
+
+			e := le.Value.(*entry)
+			if !fn(e.key, e.value) {
+				break L
+			}
+			le = le.Next()
+		}
+	}
+}
+
+// TraverseReverse will call fn for each element in the LRU, from least recently used to
+// most. If fn returns false, the traverse stops
+func (this *LRU) TraverseReverse(fn TraverseFunc) {
+L:
+	for _, s := range this.shards {
+		le := s.evictList.Back()
+		for {
+			if le == nil {
+				break L
+			}
+
+			e := le.Value.(*entry)
+			if !fn(e.key, e.value) {
+				break L
+			}
+			le = le.Prev()
+		}
+	}
+}
+
+
+
+// useful Interfaces for our hash function
 type stringer interface {
 	String() string
 }

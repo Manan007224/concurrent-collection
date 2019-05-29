@@ -1,0 +1,16 @@
+goos: linux
+goarch: amd64
+BenchmarkAdd/mostly_new-4   	 								1000000	      1004 ns/op
+BenchmarkAdd/mostly_existing-4         				10000000	    234 ns/op
+BenchmarkAddParallel/mostly_new-4      	 			2000000	      1186 ns/op
+BenchmarkAddParallel/mostly_existing-4 				10000000	    162 ns/op
+BenchmarkGet/mostly_found-4            			 	3000000	      347 ns/op
+BenchmarkGet/mostly_not_found-4        	 			5000000	      307 ns/op
+BenchmarkGetParallel/mostly_found-4    				10000000	    147 ns/op
+BenchmarkGetParallel/mostly_not_found-4       20000000	    136 ns/op
+BenchmarkRemove/mostly_found-4                5000000	      392 ns/op
+BenchmarkRemove/mostly_not_found-4            5000000	      256 ns/op
+BenchmarkRemoveParallel/mostly_found-4        10000000	    155 ns/op
+BenchmarkRemoveParallel/mostly_not_found-4    20000000	    128 ns/op
+PASS
+ok  	_/home/manan/Desktop/data-collection/src/sharded_lru	160.519s

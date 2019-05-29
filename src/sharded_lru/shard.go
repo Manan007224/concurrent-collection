@@ -7,11 +7,11 @@ import (
 )
 
 type shard struct {
-	cap 				int 												// The max no of items LRU can hold
+	cap 				int 							// The max no of items LRU can hold
 	len 				int32
-	cache 			map[interface{}]*list.Element // The cache for our items 
-	evictList  *list.List 										// The acutal list holding our data
-	sync.Mutex																// Protects the cache and evictList
+	cache 				map[interface{}]*list.Element 	// The cache for our items 
+	evictList  			*list.List 						// The acutal list holding our data
+	sync.Mutex											// Protects the cache and evictList
 }
 
 func newShard(cap int) *shard {
@@ -36,11 +36,11 @@ func (s *shard) add(k, v interface{}) {
 	// first let's see if we already have this key
 	if le, ok := s.cache[k]; ok {
 		// update the entry and move it to the front
-		le.Value.(*entry).val = v
+		le.Value.(*entry).value = v
 		s.evictList.MoveToFront(le)
 		return
 	}
-	s.cache[k] = s.evictList.PushFront(&entry{key: k, val: v})
+	s.cache[k] = s.evictList.PushFront(&entry{key: k, value: v})
 	atomic.AddInt32(&s.len, 1)
 
 	if s.cap > 0 && s.Len() > s.cap {
@@ -60,7 +60,7 @@ func (s *shard) front() (key, val interface{}) {
 	}
 
 	le := s.evictList.Front()
-	return le.Value.(*entry).key, le.Value.(*entry).val
+	return le.Value.(*entry).key, le.Value.(*entry).value
 }
 
 // get will try to retrieve a value from the given key. The second return is
@@ -71,7 +71,7 @@ func (s *shard) get(key interface{}) (value interface{}, ok bool) {
 
 	if le, found := s.cache[key]; found {
 		s.evictList.MoveToFront(le)
-		return le.Value.(*entry).val, true
+		return le.Value.(*entry).value, true
 	}
 	return nil, false
 }
@@ -89,7 +89,7 @@ func (s *shard) removeElement(le *list.Element) (key, val interface{}) {
 	s.evictList.Remove(le)
 	delete(s.cache, e.key)
 	atomic.AddInt32(&s.len, -1)
-	return e.key, e.val
+	return e.key, e.value
 }
 
 // removeKey will remove the given key from the LRU

@@ -8,10 +8,10 @@ import (
 )
 
 type LRU struct {
-	cap 				int 													// The max no of items LRU can hold
+	cap 			int 						  // The max no of items LRU can hold
 	cache 			map[interface{}]*list.Element // The cache for our items 
-	evictList  *list.List 										// The acutal list holding our data
-	sync.Mutex																// Protects the cache and evictList
+	evictList  		*list.List 					  // The acutal list holding our data
+	sync.Mutex									  // Protects the cache and evictList
 }
 
 
