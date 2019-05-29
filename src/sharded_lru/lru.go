@@ -68,6 +68,18 @@ func (this *LRU) Len() int {
 	return len
 }
 
+// useful Interfaces for our hash function
+
+type stringer interface {
+	String() string
+}
+
+type byter interface {
+	Bytes() []byte
+}
+
+// Implementation of the Fowler–Noll–Vo hash function. Simple but very useful one.
+
 func (this *LRU) shard(key interface{}) *shard {
 	h := fnv.New32a() // used to hash a byte array
 
@@ -92,9 +104,7 @@ func (this *LRU) shard(key interface{}) *shard {
 		*int64, int64, []int64, *uint64, uint64, []uint64:
 		h.Write(toBytes(v))
 	default:
-		// the user is using an unknown type as the key, so we're now grasping
-		// at straws here. This will be at least an order of magnitude slower
-		// then the options above.
+		// If the user is using an unknown type of key. A bit slower than the above ones.
 		var buf bytes.Buffer
 		enc := gob.NewEncoder(&buf)
 		err := enc.Encode(v)
@@ -131,3 +141,4 @@ func intBytes(i int) []byte {
 		b[7] = byte(i >> 56)
 	}
 	return b
+}
