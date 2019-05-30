@@ -1,7 +1,6 @@
-package main
+package workerpool 
 
 import (
-	"fmt"
 	"math/rand"
 )
 

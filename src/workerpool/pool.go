@@ -1,7 +1,6 @@
-package main
+package workerpool 
 
 import (
-	"fmt"
 	"container/heap"
 )
 
@@ -11,13 +10,15 @@ const defaultSize int32 = 30
 
 // create a new pool
 func New(workers int, done chan *Request) *Pool {
-	p := &Pool{}
-	for w := 0; w < workers; ++w {
+	var p Pool
+	for w := 0; w < workers; w++ {
 		requests := make(chan Request, defaultSize)
-		worker := {requests, 0, w}
+		worker := worker{requests, 0, w}
 		go worker.Work(done)
-		pool = append(pool, &worker)
+		pool = append(p, &worker)
 	}
+	heap.Init(&p)
+	return &p
 }
 
 func (p *Pool) Less(i, j int) bool {
@@ -28,7 +29,7 @@ func (p *Pool) Len () int {
 	return len(p)
 }
 
-func (p *Pool) swap(i, j int) {
+func (p *Pool) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 	p[i].index = i 
 	p[j].index = j
@@ -40,7 +41,7 @@ func (p *Pool) Push(w interface{}) {
 	*p = append(*p,  worker)
 }
 
-func (p *Pool) Pop(w interface{}) {
+func (p *Pool) Pop() interface{} {
 	old := *(p)
 	n := len(old)
 	item := old[n-1]

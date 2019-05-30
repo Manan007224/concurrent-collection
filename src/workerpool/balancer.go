@@ -1,36 +1,40 @@
-// Balancer sends request to most lightly loaded worker
-// Uses min-heap
-
-package main
+package workerpool
 
 import (
-	"fmt"
 	"container/heap"
+	"fmt"
 )
 
+// Balancer has a pool of workers and a channel to pass
+// workers through when they are finished a task
 type Balancer struct {
-	workerpool 	*Pool
-	done 		chan int
+	pool *Pool
+	done chan *Worker
 }
 
-func (b *Balancer) Balance (work chan Request) {
+// Balance takes in a channel of requests and distrubutes them
+func (b *Balancer) Balance(requests <-chan Request) {
 	for {
 		select {
-		case req := <-work:
+		case request := <-requests:
 			b.dispatch(request)
+			fmt.Println(b.pool)
 		case worker := <-b.done:
 			b.complete(worker)
+		}
 	}
 }
 
-func (b *Balancer) dispatch(req Request) {
-	w := heap.Pop(&b.pool).(*Worker) // Grabbing the least loaded worker
-	w.requests <- req 
-	w.pending++
-	heap.Push(&b.pool, w)
+// dispatch distrubutes the requests
+func (b *Balancer) dispatch(request Request) {
+	w := heap.Pop(b.pool).(*Worker)
+	w.requests <- request
+	w.pending += 1
+	heap.Push(b.pool, w)
 }
 
-func (b *Balancer) complete(w *Worker) {
-	w.pending--;
-	heap.Fix(&b.pool, w.index)
+// complete updates the worker pool when a request is complete
+func (b *Balancer) complete(worker *Worker) {
+	worker.pending -= 1
+	heap.Fix(b.pool, worker.index)
 }

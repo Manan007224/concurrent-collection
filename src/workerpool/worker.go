@@ -1,8 +1,4 @@
-package main
-
-import (
-	"fmt"
-)
+package workerpool 
 
 type Worker struct {
 	requests 	chan int	// All the pending requests(work to do ..)
