@@ -1,7 +1,7 @@
-package workerpool 
+package Workerpool 
 
 type Worker struct {
-	requests 	chan int	// All the pending requests(work to do ..)
+	requests 	chan Request	// All the pending requests(work to do ..)
 	pending 	int			// count of remaining tasks
 	index 		int			// index in the heap
 }
@@ -11,7 +11,7 @@ func (w *Worker) Work(done chan *Worker) {
 	for {
 		select {
 		case req := <-w.requests:
-			req.result = req.performJob()
+			req.result <- req.job()
 			done <- w
 		}
 	}

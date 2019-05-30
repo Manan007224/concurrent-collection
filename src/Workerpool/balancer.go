@@ -1,15 +1,15 @@
-package workerpool
+package Workerpool
 
 import (
 	"container/heap"
 	"fmt"
 )
 
-// Balancer has a pool of workers and a channel to pass
+// Balancer has a Pool of workers and a channel to pass
 // workers through when they are finished a task
 type Balancer struct {
-	pool *Pool
-	done chan *Worker
+	Pool 	*Pool
+	Done 	chan *Worker
 }
 
 // Balance takes in a channel of requests and distrubutes them
@@ -18,8 +18,8 @@ func (b *Balancer) Balance(requests <-chan Request) {
 		select {
 		case request := <-requests:
 			b.dispatch(request)
-			fmt.Println(b.pool)
-		case worker := <-b.done:
+			fmt.Println(b.Pool)
+		case worker := <-b.Done:
 			b.complete(worker)
 		}
 	}
@@ -27,14 +27,14 @@ func (b *Balancer) Balance(requests <-chan Request) {
 
 // dispatch distrubutes the requests
 func (b *Balancer) dispatch(request Request) {
-	w := heap.Pop(b.pool).(*Worker)
+	w := heap.Pop(b.Pool).(*Worker)
 	w.requests <- request
 	w.pending += 1
-	heap.Push(b.pool, w)
+	heap.Push(b.Pool, w)
 }
 
-// complete updates the worker pool when a request is complete
+// complete updates the worker Pool when a request is complete
 func (b *Balancer) complete(worker *Worker) {
 	worker.pending -= 1
-	heap.Fix(b.pool, worker.index)
+	heap.Fix(b.Pool, worker.index)
 }

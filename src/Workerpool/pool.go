@@ -1,4 +1,4 @@
-package workerpool 
+package Workerpool 
 
 import (
 	"container/heap"
@@ -9,27 +9,27 @@ type Pool []*Worker
 const defaultSize int32 = 30
 
 // create a new pool
-func New(workers int, done chan *Request) *Pool {
+func New(workers int, done chan *Worker) *Pool {
 	var p Pool
 	for w := 0; w < workers; w++ {
 		requests := make(chan Request, defaultSize)
-		worker := worker{requests, 0, w}
+		worker := Worker{requests, 0, w}
 		go worker.Work(done)
-		pool = append(p, &worker)
+		p = append(p, &worker)
 	}
 	heap.Init(&p)
 	return &p
 }
 
-func (p *Pool) Less(i, j int) bool {
+func (p Pool) Less(i, j int) bool {
 	return p[i].pending < p[j].pending
 }
 
-func (p *Pool) Len () int {
+func (p Pool) Len () int {
 	return len(p)
 }
 
-func (p *Pool) Swap(i, j int) {
+func (p Pool) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 	p[i].index = i 
 	p[j].index = j

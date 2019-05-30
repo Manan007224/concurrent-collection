@@ -1,7 +1,8 @@
-package workerpool 
+package Workerpool 
 
 import (
 	"math/rand"
+	"time"
 )
 
 type Request struct {
@@ -11,12 +12,12 @@ type Request struct {
 
 
 // Todo ..
-func performJob() int {
+func job() int {
 	time.Sleep((time.Duration(rand.Intn(4)) * time.Second) + time.Second)
 	return 1
 }
 
-func requester(requests chan Request) {
+func Requester(requests chan Request) {
 	result := make(chan int)
 	for {
 
@@ -25,7 +26,7 @@ func requester(requests chan Request) {
 
 		select {
 		// request sent
-		case request  <- Request{performJob, result}:
+		case requests  <- Request{job, result}:
 
 		// result came back	
 		case <-result:

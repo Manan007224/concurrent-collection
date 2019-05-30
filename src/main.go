@@ -3,18 +3,18 @@ package main
 import (
 	"fmt"
 	"runtime"
-	"./workerpool"
+	"./Workerpool"
 )
 
 func main() {
-	fmt.Println("WorkerPool Starting ...")
+	fmt.Println("Workerpool Starting ...")
 	available_cpus := runtime.NumCPU() // assign num_of_workers to the available cpu's at runtime
 
-	requests := make(chan workerpool.Request)
-	done := make(chan workerpool.(*Worker))
-	pool := workerpool.NewPool(available_cpus, done)
-	balancer := &(workerpool.Balancer{pool, done})
+	requests := make(chan Workerpool.Request)
+	done := make(chan *Workerpool.Worker)
+	pool := Workerpool.New(available_cpus, done)
+	balancer := &Workerpool.Balancer{pool, done}
 
 	go balancer.Balance(requests)
-	workerpool.requester(requests)
+	Workerpool.Requester(requests)
 }
