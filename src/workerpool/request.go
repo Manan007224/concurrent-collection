@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 type Request struct {
@@ -12,15 +13,22 @@ type Request struct {
 
 // Todo ..
 func performJob() int {
-
+	time.Sleep((time.Duration(rand.Intn(4)) * time.Second) + time.Second)
+	return 1
 }
 
 func requester(requests chan Request) {
 	result := make(chan int)
 	for {
+
+		// sleep for a while
+		time.Sleep((time.Duration(rand.Intn(4)) * time.Second) + time.Second)
+
 		select {
+		// request sent
 		case request  <- Request{performJob, result}:
 
+		// result came back	
 		case <-result:
 		}
 	}
