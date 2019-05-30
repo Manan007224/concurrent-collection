@@ -1,7 +1,9 @@
-package Workerpool 
+package Workerpool
 
 import (
 	"container/heap"
+	"fmt"
+	"strconv"
 )
 
 type Pool []*Worker
@@ -10,15 +12,15 @@ const defaultSize int32 = 30
 
 // create a new pool
 func New(workers int, done chan *Worker) *Pool {
-	p := &Pool
+	var p Pool
 	for w := 0; w < workers; w++ {
 		requests := make(chan Request, defaultSize)
 		worker := Worker{requests, 0, w}
 		go worker.Work(done)
 		p = append(p, &worker)
 	}
-	heap.Init(p)
-	return p
+	heap.Init(&p)
+	return &p
 }
 
 func (p Pool) Less(i, j int) bool {
@@ -50,3 +52,23 @@ func (p *Pool) Pop() interface{} {
 	return item
 }
 
+/////////////////// Standard Stats //////////////////////////////////
+
+func (p Pool) stats() (mean float64) {
+	l := float64(len(p))
+	for _, worker := range p {
+		mean += float64(worker.pending)
+	}
+	mean /= l
+	return mean
+}
+
+func (p Pool) String() string {
+	var workers string
+	for _, worker := range p {
+		workers += strconv.Itoa(worker.pending) + " "
+	}
+
+	mean := p.stats()
+	return fmt.Sprintf("Workers: %v| Avg Load: %.2f", workers, mean)
+}

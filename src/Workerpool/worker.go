@@ -2,8 +2,8 @@ package Workerpool
 
 type Worker struct {
 	requests 	chan Request	// All the pending requests(work to do ..)
-	pending 	int			// count of remaining tasks
-	index 		int			// index in the heap
+	pending 	int				// count of remaining tasks
+	index 		int				// index in the heap
 }
 
 // Worker performs the work to be done
