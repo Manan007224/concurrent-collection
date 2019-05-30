@@ -10,7 +10,7 @@ import (
 )
 
 type LRU struct {
-	cap 		int
+cap 		int
 	nshards 	int
 	shards		[]*shard
 }
