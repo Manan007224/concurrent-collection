@@ -10,15 +10,15 @@ const defaultSize int32 = 30
 
 // create a new pool
 func New(workers int, done chan *Worker) *Pool {
-	var p Pool
+	p := &Pool
 	for w := 0; w < workers; w++ {
 		requests := make(chan Request, defaultSize)
 		worker := Worker{requests, 0, w}
 		go worker.Work(done)
 		p = append(p, &worker)
 	}
-	heap.Init(&p)
-	return &p
+	heap.Init(p)
+	return p
 }
 
 func (p Pool) Less(i, j int) bool {
