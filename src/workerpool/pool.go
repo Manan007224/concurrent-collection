@@ -14,7 +14,7 @@ func New(workers int, done chan *Request) *Pool {
 	p := &Pool{}
 	for w := 0; w < workers; ++w {
 		requests := make(chan Request, defaultSize)
-		worker := {requests, 0, i}
+		worker := {requests, 0, w}
 		go worker.Work(done)
 		pool = append(pool, &worker)
 	}
